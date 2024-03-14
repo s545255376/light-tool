@@ -1,114 +1,100 @@
 <template>
   <div class="table">
-    <div class="table-container custom-table" :style="`max-height: ${tableHeight}px`" v-resize="tableResize">
-      <table>
-        <thead>
-        <tr>
-          <th v-for="(column, index) in header" :key="column.label" class="header-column" :style="getThStyle(column)">
-            <div class="header-box" :style="getStyle(column)">
-              {{ column.label }}
-              <!--            <el-tooltip className="item" effect="dark"-->
-              <!--                        :content="column.hover" placement="top"-->
-              <!--                        :visible-arrow="false"-->
-              <!--                        popper-class="ct-tooltip"-->
-              <!--                        v-if="column.hover"-->
-              <!--            >-->
-              <!--              <svg-icon icon-class="info"-->
-              <!--                        style="width: 12px;height:12px; display: inline;margin-left: 4px;cursor:pointer;"/>-->
-              <!--            </el-tooltip>-->
-            </div>
-          </th>
-        </tr>
-        </thead>
-        <tbody>
-        <template v-if="data.length > 0">
-          <template v-for="(row, idx) in data">
-            <tr>
-              <td v-for="(item, index) in header" :key="item.label"
-                  :class="`${item.fixed ? 'data-column boxShadow' : 'data-column' }`" :style="getTdStyle(item)">
-                <div class="data-box" :style="getStyle(item, false)"
-                     :data-title="showEmpty(item.func ? item.func(row[item.key]) : row[item.key], item.empty ? item.empty : '-')"
-                     @mouseenter="enterToolTip"
-                     @mouseleave="leaveToolTip"
-                >
-                  <div class="ellipsis">
-                    <template v-if="item.type === 'expand'">
-                      <div @click="clickExpand(idx)" class="expand-icon">
+    <div class="padding">
+      <div class="table-container custom-table" :style="`max-height: ${tableHeight}px`" v-resize="tableResize">
+        <table>
+          <thead>
+          <tr>
+            <th v-for="(column, index) in header" :key="column.label" class="header-column" :style="getThStyle(column)">
+              <div class="header-box" :style="getStyle(column)">
+                {{ column.label }}
+                <i
+                    style="margin-left: 4px"
+                    class="iconfont icon-info-circle"
+                    :data-title="column.hover"
+                    @mouseover="(el)=> showToolTip(el, column.hover)"
+                    @mouseout="hideToolTip"
+                    v-if="column.hover"
+                ></i>
+              </div>
+            </th>
+          </tr>
+          </thead>
+          <tbody>
+          <template v-if="data.length > 0">
+            <template v-for="(row, idx) in data">
+              <tr>
+                <td v-for="(item, index) in header" :key="item.label"
+                    :class="`${item.fixed ? 'data-column boxShadow' : 'data-column' }`" :style="getTdStyle(item)">
+                  <div class="data-box" :style="getStyle(item, false)"
+                       :data-title="showEmpty(item.func ? item.func(row[item.key]) : row[item.key], item.empty ? item.empty : '-')"
+                       @mouseenter="enterToolTip"
+                       @mouseleave="leaveToolTip"
+                  >
+                    <div class="ellipsis">
+                      <template v-if="item.type === 'expand'">
+                        <div @click="clickExpand(idx)" class="expand-icon">
                           <i class="iconfont icon-xia" v-if="expandList.indexOf(idx) > -1"/>
                           <i class="iconfont icon-right" v-else/>
-                      </div>
-                    </template>
-                    <template v-else>
-                      <slot
-                          v-if="item.slot"
-                          :name="item.prop"
-                          :row="row"
-                          :$index="index"
-                      ></slot>
-                      <span class="padding9" v-else>
+                        </div>
+                      </template>
+                      <template v-else>
+                        <slot
+                            v-if="item.slot"
+                            :name="item.prop"
+                            :row="row"
+                            :$index="index"
+                        ></slot>
+                        <span class="padding9" v-else>
                         {{
-                          showEmpty(item.func ? item.func(row[item.key]) : row[item.key], item.empty ? item.empty : '-')
-                        }}
+                            showEmpty(item.func ? item.func(row[item.key]) : row[item.key], item.empty ? item.empty : '-')
+                          }}
                         </span>
-                    </template>
+                      </template>
+                    </div>
                   </div>
-                </div>
-              </td>
-            </tr>
-            <tr v-show="expandList.indexOf(idx) > -1">
-              <td :colspan="header.length" style="position: relative; ">
-                <div style="overflow: auto; " class="expand-table">
-                  <slot
-                      name="expand"
-                      :row="row"
-                  ></slot>
-                </div>
+                </td>
+              </tr>
+              <tr v-show="expandList.indexOf(idx) > -1">
+                <td :colspan="header.length" style="position: relative; ">
+                  <div style="overflow: auto; " class="expand-table">
+                    <slot
+                        name="expand"
+                        :row="row"
+                    ></slot>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </template>
+          <template v-else>
+            <tr>
+              <td :colspan="header.length" class="empty-td" align="center">
+                暂无数据
               </td>
             </tr>
           </template>
-        </template>
-        <template v-else>
-          <tr>
-            <td :colspan="header.length" class="empty-td" align="center">
-              暂无数据
-            </td>
-          </tr>
-        </template>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import toolTip from "../ToolTip/index.js"
 export default {
   name: 'LightTable',
   props: {
-    border: {
-      type: Boolean,
-      default: false
-    },
-    align: {
-      type: String,
-      default: "left"
-    },
-    total: {
-      type: Number,
-      default: 0
-    },
-    rowKey: {
-      type: String,
-      default: ""
-    },
     data: {
       type: Array,
       default: () => {
         return []
       }
     },
-    fixHeight: {
-      type: Boolean,
-      default: true
+    tableHeight: {
+      type: Number,
+      default: 999999999
     },
     header: {
       type: Array,
@@ -116,46 +102,11 @@ export default {
         return []
       }
     },
-    params: {
-      type: Object,
-      default: () => {
-        return {}
-      }
-    },
   },
   data() {
     return {
-      tableHeight: 999999999,
       expandList: [],
-      ob: null
     }
-  },
-  watch: {
-    params: {
-      handler(val, old) {
-        this.expandList = []
-      },
-      immediate: true,
-      deep: true
-    }
-  },
-  mounted() {
-    // if (this.fixHeight) {
-    //   let el = document.getElementsByClassName("custom-table")[0]
-    //   // 创建监听器
-    //   let ob = new MutationObserver(entries => {
-    //     this.setTableHeight()
-    //   })
-    //   // 监听元素变化
-    //   ob.observe(el, {attributes: true, subtree: false})
-    //   this.setTableHeight()
-    // }
-  },
-  destroyed() {
-    this.ob && this.ob.disconnect()
-  },
-  deactivated() {
-    this.ob && this.ob.disconnect()
   },
   directives: {
     'resize': { // 指令的名称
@@ -173,11 +124,25 @@ export default {
     }
   },
   methods: {
-    enterToolTip(el) {
-      let child = el.target.children[0]
-      if (child.scrollWidth !== child.clientWidth) {
+    showToolTip(el, text){
+      let react = el.target.getBoundingClientRect()
+      react.clientX = react.x
+      react.clientY = react.y + 10
+      toolTip.show({text, event: react})
+    },
+    hideToolTip(el){
+      toolTip.hide()
+    },
+    enterToolTip(el, check=true) {
+      if(check){
+        let child = el.target.children[0]
+        if (child.scrollWidth !== child.clientWidth) {
+          el.target.classList.add("tip")
+        }
+      }else {
         el.target.classList.add("tip")
       }
+
     },
     leaveToolTip(el) {
       el.target.classList.remove("tip")
@@ -336,7 +301,7 @@ export default {
         if (!item.tip) {
           style.whiteSpace = "unset"
           style.width = item.width + "px"
-        }else {
+        } else {
           style.maxWidth = item.width + "px"
         }
       } else {
@@ -352,7 +317,7 @@ export default {
     showEmpty(v, empty = "-") {
       return this.empty(v) && v !== 0 ? empty : v
     },
-    empty(v){
+    empty(v) {
       return !v || (Array.prototype.isPrototypeOf(v) && v.length === 0) || (Object.prototype.isPrototypeOf(v) && Object.keys(v).length === 0)
     }
   }
@@ -361,6 +326,7 @@ export default {
 
 <style scoped lang="less">
 @import "./icon.css";
+
 .ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -415,7 +381,7 @@ export default {
   }
 
   .padding {
-    padding: 0 20px 10px 20px;
+    padding: 10px 20px 10px 20px;
 
     .empty {
       width: 294px;
@@ -447,6 +413,7 @@ export default {
     }
 
     .header-column {
+      position: relative;
       padding: 0 16px;
       background-color: #EEF0F3;
       font-size: 12px;
